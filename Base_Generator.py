@@ -11,8 +11,7 @@ from hashlib import md5
 from pathlib import Path
 from subprocess import call
 
-# import image_conversion_fun as imProc
-import image_conversion_fun_v2 as imProc
+import image_conversion_fun as imProc
 from random_dev import devRandomGenerator
 from fix_dev import devFixGenerator
 
