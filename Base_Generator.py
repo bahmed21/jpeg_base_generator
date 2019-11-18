@@ -21,7 +21,7 @@ from fix_dev import devFixGenerator
 keepUncompressed = False
 
 # Name of the directory that will contain developed JPEG images:
-baseName = "Real_Base"
+baseName = "Real_Base_2"
 # Fix the development for all images in RAWs DB or make a random development
 bool_random_dev = False
 # To divide the initial image in 16 small images
@@ -34,27 +34,25 @@ bool_grayscale = True
 bool_remove_beginning = True
 remove_dir = ["out_dir", "out_dir_tif", "tmp_dir", "profile_used_dir", "out_dir_multisplit"]
 
-# Create a text file to store every X3F images
-with open('X3F_images.txt', 'w') as f:
-    f.write("All X3F images are list here:\n")
-    f.close()
-
 # Complete path where the script is run
 real_path = Path(os.path.dirname(os.path.realpath(__file__)))
+hd_path = "/media/yiouki/HD_Hugo/DataBase/"
+
 # Here we start defining the most important variable "config_path" which defines ALL directory used
 # we start with the main root directory, in which everything will be output:
-config_path = dict(root="JPEG_Bases")
-# config_path = dict(root="Dell_Bases" + "/" + baseName)
+# config_path = dict(root="JPEG_Bases")
+config_path = dict(root=os.path.join(hd_path, "DB_RealComplete", "Dell_Bases", baseName))
+
 # where RAW images should be
-raw_folder_path_parent = os.path.join(real_path.parent.parent, "RAW_bases")
-# raw_folder_path_parent = os.path.join(real_path, "RAW_bases")
+# raw_folder_path_parent = os.path.join(real_path.parent.parent, "RAW_bases")
+raw_folder_path_parent = os.path.join(hd_path, "RAW_bases")
 config_path["raw_dir"] = ["ALASKA2_Base", "Boss_Base", "Dresden_Base", "RAISE_Base", "StegoApp_Base",
                           "Wesaturate_Base"]
-# config_path["raw_dir"] = ["ALASKA2_Base", "Boss_Base"]
+# config_path["raw_dir"] = ["Boss_Base"]
 # where JPEG images will be stored:
 config_path["out_dir"] = config_path["root"] + "/" + baseName + "_JPG_1024x1024_QF75"
 # where JPEG images split with multi crop will be stored:
-config_path["out_dir_multisplit"] = config_path["root"] + "/" + baseName + "_JPG_MultiSplit_256x256_QF75"
+config_path["out_dir_multisplit"] = config_path["root"] + "/" + baseName + "_MultiSplit_JPG_256x256_QF75"
 # where TIFF (uncompressed) images will be stored:
 config_path["out_dir_tif"] = config_path["root"] + "/" + baseName + "_TIFF_1024x1024"
 
@@ -292,11 +290,9 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
                     raw_folder = os.path.split(RAWpath)[1]
                     if bool_multicrop and bool_random_dev is False:
                         # Split the TIFF in x TIFF of 256x256
-                        multi_crop(TIFimage3Path, config_process["jpg_per_raw"])
+                        tif_multicrop_path = multi_crop(TIFimage3Path, config_process["jpg_per_raw"])
 
-                        tif_multicrop_path = os.path.join(config_path["out_dir_tif"], "Multi_Crop", imageBaseName)
                         # Save JPEG in different folder (each RAW folder have 16 JPEG images)
-                        # jpeg_mutlicrop_path = os.path.join(config_path["out_dir"], "Multi_Crop", imageBaseName)
                         jpeg_mutlicrop_path = os.path.join(config_path["out_dir_multisplit"], raw_folder)
                         if not os.path.exists(jpeg_mutlicrop_path):
                             os.makedirs(jpeg_mutlicrop_path, 0o755)
@@ -351,13 +347,12 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
 
 def multi_crop(initial_path, nb_images):
     path = os.path.splitext(initial_path)[0]
-    raw_image = str.split(path, '/')[2]
-    path = os.path.join(str.split(path, '/')[0], str.split(path, '/')[1])
-    complete_path = os.path.join(path, "Multi_Crop", raw_image)
+    raw_image = str.split(path, '/')[-1]
+    path = os.path.join(*str.split(path, '/')[1:-1])
+    complete_path = os.path.join("/", path, "Multi_Crop", raw_image)
     if not os.path.exists(complete_path):
         os.makedirs(complete_path, 0o755)
 
-    # im = (tifffile.imread(initial_path) / (2 ** 16 - 1))
     im = tifffile.imread(initial_path)
     img_width, img_height = im.shape[0:2]
 
@@ -369,10 +364,6 @@ def multi_crop(initial_path, nb_images):
     imgs = []
     for i in range(0, img_height, step_height):
         for j in range(0, img_width, step_width):
-            # box = (j, i, min(img_width, j + step_width), min(img_height, i + step_height))
-            # a = im.crop(box)
-
-            # Here we simply compute the first and last indices of pixels' central area.
             left = i
             top = j
             right = min(img_width, i + step_width)
@@ -387,7 +378,7 @@ def multi_crop(initial_path, nb_images):
                 pass
             k += 1
 
-            # return imgs
+    return complete_path
 
 
 # **************************#
