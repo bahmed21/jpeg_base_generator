@@ -21,7 +21,7 @@ from fix_dev import devFixGenerator
 keepUncompressed = False
 
 # Name of the directory that will contain developed JPEG images:
-baseName = "Real_Base_2"
+baseName = "Real_Base_3"
 # Fix the development for all images in RAWs DB or make a random development
 bool_random_dev = False
 # To divide the initial image in 16 small images
@@ -97,15 +97,15 @@ config_process["prob_crop_only"] = 0
 # Probability of doing both resising and then croping:
 config_process["prob_resize_and_crop"] = 1 - config_process["prob_resize_only"] - config_process["prob_crop_only"]
 # Definition of the set of possible resampling kernels (for resizing)....
-config_process["resize_kernel"] = [Image.NEAREST, Image.BILINEAR, Image.BICUBIC, Image.LANCZOS]
-# config_process["resize_kernel"] = Image.LANCZOS
+# config_process["resize_kernel"] = [Image.NEAREST, Image.BILINEAR, Image.BICUBIC, Image.LANCZOS]
+config_process["resize_kernel"] = Image.LANCZOS
 # Along with the probability of each
 config_process["resize_kernel_prob"] = [0.1, 0.15, 0.25, 0.5]
 # config_process["resize_kernel_prob"] = 1
 # Maximal resizing factor (here, upsampling by 30%)
 config_process["resize_factor_upperBound"] = 1.30
 # QF
-# config_process["jpeg_qf"] = np.arange(60, 100 + 1)
+config_process["jpeg_qf"] = np.arange(60, 100 + 1)
 config_process["jpeg_qf"] = 75
 # Probabilities corresponding of QF
 config_process["jpeg_qf_probabilities"] = [0.0030, 0, 0, 0, 0, 0.0010, 0, 0, 0, 0.0010, 0.0070, 0.0020, 0.0010, 0,
