@@ -29,18 +29,18 @@ KERNEL_dict = {Image.NEAREST: "NEAREST", Image.BILINEAR: "BILINEAR", Image.BICUB
 
 class devRandomGenerator:
     # Initializer whose main goal is to define the statistical distributions for all the parameters considered
-    # **************************#
+    # ***************************#
     # Main function: initializer #
-    # **************************#
+    # ***************************#
     # The goal of this function is to select randomly  function
     def __init__(self, qf, qf_probs, crop_size, dem, dem_probs, resize_kernel, resize_kernel_probs, seed=None):
 
         # First define the different distributions
         usm_radius_values = np.arange(0.3, 3 + 0.01, 0.01)
-        usm_radius_prob = np.logspace(1, 0.1, num=271)
+        usm_radius_prob = np.logspace(1, 0.1, num=len(usm_radius_values))
         usm_radius_prob = usm_radius_prob / np.sum(usm_radius_prob)
 
-        usm_amount_values = np.arange(0, 1001, 1)
+        usm_amount_values = np.arange(0, 1000 + 1, 1)
         usm_amount_prob = np.concatenate([np.logspace(0, 250, num=250, base=1.005),
                                           np.logspace(0, 751, num=751, base=0.985) * (1.005 ** 250)])
         usm_amount_prob = usm_amount_prob / np.sum(usm_amount_prob)
@@ -70,9 +70,9 @@ class devRandomGenerator:
         self.resize_kernel = {"kernel": lambda: self.r.choice(resize_kernel, p=resize_kernel_probs)}
         self.resize_weight = {"factor": lambda: self.r.uniform(0, 1)}
 
-    # Random profile according to the probabilities associated with each developement step, as step in the variable
-    # process_config from the main script ALASKA_conversion.py, we pick, or not, a random value for each paramter
-    # following the distribution defined in the initialiser The developement process is eventually written into a
+    # Random profile according to the probabilities associated with each development step, as step in the variable
+    # process_config from the main script ALASKA_conversion.py, we pick, or not, a random value for each parameter
+    # following the distribution defined in the initializer The development process is eventually written into a
     # rawtherapee compatible pp3 file.
     def generate_random_RT_profile(self, imageDevList, outputPath, backupfile):
         radius = 0
