@@ -23,7 +23,7 @@ keepUncompressed = False
 # Name of the directory that will contain developed JPEG images:
 baseName = "Real_Base_3"
 # Fix the development for all images in RAWs DB or make a random development
-bool_random_dev = False
+bool_random_dev = True
 # To divide the initial image in 16 small images
 # /!\ The multi crop is disable if th development is random
 bool_multicrop = True
@@ -44,11 +44,11 @@ config_path = dict(root="JPEG_Bases")
 # config_path = dict(root=os.path.join(hd_path, "DB_RealComplete", "Dell_Bases", baseName))
 
 # where RAW images should be
-raw_folder_path_parent = os.path.join(real_path, "RAW_bases")
-config_path["raw_dir"] = ["Test_Base_1", "Test_Base_2"]
-# raw_folder_path_parent = os.path.join(hd_path, "RAW_bases")
-# config_path["raw_dir"] = ["ALASKA2_Base", "Boss_Base", "Dresden_Base", "RAISE_Base", "StegoApp_Base",
-#                           "Wesaturate_Base"]
+# raw_folder_path_parent = os.path.join(real_path, "RAW_bases")
+# config_path["raw_dir"] = ["Test_Base_1", "Test_Base_2"]
+raw_folder_path_parent = os.path.join(hd_path, "RAW_bases")
+config_path["raw_dir"] = ["ALASKA2_Base", "Boss_Base", "Dresden_Base", "RAISE_Base", "StegoApp_Base",
+                          "Wesaturate_Base"]
 # where JPEG images will be stored:
 config_path["out_dir"] = config_path["root"] + "/" + baseName + "_JPG_1024x1024_QF75"
 # where JPEG images split with multi crop will be stored:
@@ -86,7 +86,6 @@ config_process["prob_denoise_if_usm"] = 1
 
 # Possible final image size (a very last cropping step is applied)
 config_process["crop_size"] = [512, 640, 720, 1024]
-# config_process["crop_size"] = 1024
 # If this variable is None: resize with a random factor, else: resize with the size write below
 config_process["resize_size"] = 1024
 # To match this final size, we can either crop / resize or do both; those are used with the following probabilities:
@@ -98,36 +97,42 @@ config_process["prob_crop_only"] = 0
 config_process["prob_resize_and_crop"] = 1 - config_process["prob_resize_only"] - config_process["prob_crop_only"]
 # Definition of the set of possible resampling kernels (for resizing)....
 # config_process["resize_kernel"] = [Image.NEAREST, Image.BILINEAR, Image.BICUBIC, Image.LANCZOS]
-config_process["resize_kernel"] = Image.LANCZOS
+config_process["resize_kernel"] = [Image.NEAREST, Image.BILINEAR, Image.BICUBIC]
 # Along with the probability of each
-config_process["resize_kernel_prob"] = [0.1, 0.15, 0.25, 0.5]
+config_process["resize_kernel_prob"] = [0.2, 0.3, 0.5]
 # config_process["resize_kernel_prob"] = 1
 # Maximal resizing factor (here, upsampling by 30%)
 config_process["resize_factor_upperBound"] = 1.30
 # QF
-config_process["jpeg_qf"] = np.arange(60, 100 + 1)
 config_process["jpeg_qf"] = 75
+config_process["jpeg_qf_probabilities"] = 1
+# config_process["jpeg_qf"] = np.arange(60, 100 + 1)
 # Probabilities corresponding of QF
-config_process["jpeg_qf_probabilities"] = [0.0030, 0, 0, 0, 0, 0.0010, 0, 0, 0, 0.0010, 0.0070, 0.0020, 0.0010, 0,
-                                           0.0010, 0.1080, 0.0010, 0.0010, 0.0010, 0.0020, 0.1730, 0.0020, 0.0020,
-                                           0.0020, 0.0040, 0.0840, 0.0050, 0.0040, 0.0100, 0.0180, 0.1190, 0.0090,
-                                           0.0160, 0.0220, 0.0240, 0.0510, 0.0470, 0.0350, 0.0560, 0.0300, 0.1580]
-# config_process["jpeg_qf_probabilities"] = 1
+# config_process["jpeg_qf_probabilities"] = [0.0030, 0, 0, 0, 0, 0.0010, 0, 0, 0, 0.0010, 0.0070, 0.0020, 0.0010, 0,
+#                                            0.0010, 0.1080, 0.0010, 0.0010, 0.0010, 0.0020, 0.1730, 0.0020, 0.0020,
+#                                            0.0020, 0.0040, 0.0840, 0.0050, 0.0040, 0.0100, 0.0180, 0.1190, 0.0090,
+#                                            0.0160, 0.0220, 0.0240, 0.0510, 0.0470, 0.0350, 0.0560, 0.0300, 0.1580]
 # Things are slightly different for demosaicing since each demosaicing algorithm needs to be associated with a pp3 file.
 # Hence, we first set the directory that contain the files for different demosaicing algorithms ....
 config_process["demosaicing"] = os.listdir(config_path["dem_profile_dir"])
+# Copy the list in order to remove some demosaicing but to have all probabilities
+demosaicing_names_list = config_process["demosaicing"].copy()
 # then we need to set the probability of each of those (that, of course, needs to be a vector with number of component
 # equals the number of demosaicing files);
 dem_probs = []
-for dem_name in config_process["demosaicing"]:
+for dem_name in demosaicing_names_list:
     if dem_name == "dem_igv.pp3":
-        dem_probs.append(0.1)
+        # dem_probs.append(0.1)
+        config_process["demosaicing"].remove(dem_name)  # Remove IGV
     if dem_name == "dem_amaze.pp3":
-        dem_probs.append(0.4)
+        # dem_probs.append(0.4)
+        config_process["demosaicing"].remove(dem_name)  # Remove AMAZE
     if dem_name == "dem_fast.pp3":
-        dem_probs.append(0.15)
-    if dem_name == "dem_dcb_2_amel.pp3":
+        # dem_probs.append(0.15)
         dem_probs.append(0.35)
+    if dem_name == "dem_dcb_2_amel.pp3":
+        # dem_probs.append(0.35)
+        dem_probs.append(0.65)
 config_process["demosaicing_probabilities"] = dem_probs
 
 
@@ -170,10 +175,15 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
         # 'big') % 2**32
         imageSeed = int.from_bytes(md5(bytes(imageBaseName, 'utf-8')).digest(), 'big') % 2 ** 32
         # imageSeed = None
-        rg = devRandomGenerator(config_process["jpeg_qf"], config_process["jpeg_qf_probabilities"],
-                                config_process["crop_size"], config_process["demosaicing"],
-                                config_process["demosaicing_probabilities"], config_process["resize_kernel"],
-                                config_process["resize_kernel_prob"], seed=imageSeed)
+        rg = devRandomGenerator(config_process["jpeg_qf"],
+                                config_process["jpeg_qf_probabilities"],
+                                config_process["crop_size"],
+                                config_process["demosaicing"],
+                                config_process["demosaicing_probabilities"],
+                                config_process["resize_kernel"],
+                                config_process["resize_kernel_prob"],
+                                seed=imageSeed,
+                                resize_size=config_process["resize_size"])
     else:
         rg = devFixGenerator(
             config_process["jpeg_qf"],
@@ -288,7 +298,7 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
 
                 if os.path.exists(TIFimage3Path):  # All JPEG in same folder but different database
                     raw_folder = os.path.split(RAWpath)[1]
-                    if bool_multicrop and bool_random_dev is False:
+                    if bool_multicrop:  # and bool_random_dev is False:
                         # Split the TIFF in x TIFF of 256x256
                         tif_multicrop_path = multi_crop(TIFimage3Path, config_process["jpg_per_raw"],
                                                         grayscale=bool_grayscale)
@@ -436,13 +446,14 @@ if __name__ == '__main__':
         # The script can be launched using multiprocessing
         # Default configuration is to use half of the number of cores ... you can set this value to something higher
         # (Remi used 3/4 of total number of cores)
-        # numCores = int(multiprocessing.cpu_count() / 2)
-        numCores = int(multiprocessing.cpu_count() * 2 / 3)
-        # numCores = int(multiprocessing.cpu_count() * 3 / 4)
+        # numCores = int(multiprocessing.cpu_count() / 2)  # 50% of CPUs
+        # numCores = int(multiprocessing.cpu_count() * 2 / 3)  # 66% of CPUs
+        numCores = int(multiprocessing.cpu_count() * 3 / 4)  # 75% of CPUs
         Parallel(n_jobs=numCores, verbose=1)(
             delayed(From_RAW_to_JPG)(
                 RAWpath=os.path.join(raw_folder_path_parent, raw_path),
-                RAWimageName=RAWimagesName[index]) for index in image_indices)
+                RAWimageName=RAWimagesName[index]
+            ) for index in image_indices)
 
     # At the end of the script we get the time too and make the difference between the start_time and now
     print("\nTime to create the all base: " + str(datetime.timedelta(seconds=round(time.time() - start_time))))
