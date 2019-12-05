@@ -27,7 +27,7 @@ from PIL import Image
 KERNEL_dict = {Image.NEAREST: "NEAREST", Image.BILINEAR: "BILINEAR", Image.BICUBIC: "BICUBIC", Image.LANCZOS: "LANCZOS"}
 
 
-class devRandomGenerator:
+class random_dev:
     # Initializer whose main goal is to define the statistical distributions for all the parameters considered
     # ***************************#
     # Main function: initializer #
