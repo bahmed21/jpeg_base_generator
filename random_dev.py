@@ -27,11 +27,11 @@ from PIL import Image
 KERNEL_dict = {Image.NEAREST: "NEAREST", Image.BILINEAR: "BILINEAR", Image.BICUBIC: "BICUBIC", Image.LANCZOS: "LANCZOS"}
 
 
-class devRandomGenerator:
+class random_dev:
     # Initializer whose main goal is to define the statistical distributions for all the parameters considered
-    # **************************#
+    # ***************************#
     # Main function: initializer #
-    # **************************#
+    # ***************************#
     # The goal of this function is to select randomly  function
     def __init__(self, qf, qf_probs, crop_size, dem, dem_probs, resize_kernel, resize_kernel_probs, seed=None):
 
