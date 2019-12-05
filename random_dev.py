@@ -33,21 +33,34 @@ class devRandomGenerator:
     # Main function: initializer #
     # ***************************#
     # The goal of this function is to select randomly  function
-    def __init__(self, qf, qf_probs, crop_size, dem, dem_probs, resize_kernel, resize_kernel_probs, seed=None):
+    def __init__(self, qf, qf_probs, crop_size, dem, dem_probs, resize_kernel, resize_kernel_probs, seed=None,
+                 resize_size=None):
 
         # First define the different distributions
-        usm_radius_values = np.arange(0.3, 3 + 0.01, 0.01)
+        # usm_radius_values = np.arange(0.3, 3 + 0.01, 0.01)
+        usm_radius_values = np.arange(0.3, 1.7 + 0.01, 0.01)
         usm_radius_prob = np.logspace(1, 0.1, num=len(usm_radius_values))
         usm_radius_prob = usm_radius_prob / np.sum(usm_radius_prob)
 
-        usm_amount_values = np.arange(0, 1000 + 1, 1)
-        usm_amount_prob = np.concatenate([np.logspace(0, 250, num=250, base=1.005),
-                                          np.logspace(0, 751, num=751, base=0.985) * (1.005 ** 250)])
+        # usm_amount_values = np.arange(0, 1000 + 1, 1)
+        # usm_amount_prob = np.concatenate([np.logspace(0, 250, num=250, base=1.005),
+        #                                   np.logspace(0, 751, num=751, base=0.985) * (1.005 ** 250)])
+        usm_amount_values = np.arange(0, 600 + 1, 1)
+        usm_nb_values = len(usm_amount_values)
+        usm_amount_prob = np.concatenate([
+            np.logspace(0, usm_nb_values*0.25, num=int(usm_nb_values*0.25), base=1.005),
+            np.logspace(0, usm_nb_values*0.75+1, num=int(usm_nb_values*0.75)+1, base=0.985) * (1.005 ** 250)])
         usm_amount_prob = usm_amount_prob / np.sum(usm_amount_prob)
 
-        denois_lum_values = np.arange(0, 100 + 1, 1)
-        denois_lum_prob = np.concatenate([np.logspace(0, 20, num=20, base=1.0025),
-                                          np.logspace(0, 81, num=81, base=0.990) * (1.0025 ** 20)])
+        # denois_lum_values = np.arange(0, 100 + 1, 1)
+        # denois_lum_prob = np.concatenate([np.logspace(0, 20, num=20, base=1.0025),
+        #                                   np.logspace(0, 81, num=81, base=0.990) * (1.0025 ** 20)])
+        denois_lum_values = np.arange(0, 60 + 1, 1)
+        denois_nb_values = len(denois_lum_values)
+        denois_lum_prob = np.concatenate([
+            np.logspace(0, denois_nb_values*0.2, num=int(denois_nb_values*0.2), base=1.0025),
+            np.logspace(0, denois_nb_values*0.8+1, num=int(denois_nb_values*0.8)+1, base=0.990) * (1.0025 ** 20)
+        ])
         denois_lum_prob = denois_lum_prob / np.sum(denois_lum_prob)
 
         self.r = np.random.RandomState(seed)
@@ -57,16 +70,19 @@ class devRandomGenerator:
                     "amount": lambda: self.r.choice(usm_amount_values, p=usm_amount_prob)}
 
         self.denois = {"luminance": lambda: self.r.choice(denois_lum_values, p=denois_lum_prob),
-                       "detail": lambda: self.r.randint(low=0, high=60)}
+                       # "detail": lambda: self.r.randint(low=0, high=60)}
+                       "detail": lambda: self.r.randint(low=0, high=40)}
 
         self.microcontrast = {"quantity": lambda: min(round(self.r.gamma(1, 0.5) * 100), 100),
                               "uniformity": lambda: max(0, round(self.r.normal(30, 5)))}
 
         # self.QF = {"QF": lambda: int(self.r.choice(qf, p=qf_probs))}
-        self.QF = {"QF": lambda: 75}
+        self.QF = {"QF": lambda: qf}
 
-        # self.crop = {"size": lambda: self.r.choice(crop_size, 2)}
-        self.crop = {"size": lambda: [1024, 1024]}
+        if resize_size is not None:
+            self.crop = {"size": lambda: [resize_size, resize_size]}
+        else:
+            self.crop = {"size": lambda: self.r.choice(crop_size, 2)}
         self.resize_kernel = {"kernel": lambda: self.r.choice(resize_kernel, p=resize_kernel_probs)}
         self.resize_weight = {"factor": lambda: self.r.uniform(0, 1)}
 
