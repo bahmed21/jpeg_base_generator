@@ -40,15 +40,15 @@ hd_path = "/media/yiouki/HD_Hugo/DataBase/"
 
 # Here we start defining the most important variable "config_path" which defines ALL directory used
 # we start with the main root directory, in which everything will be output:
-# config_path = dict(root="JPEG_Bases")
-config_path = dict(root=os.path.join(hd_path, "DB_RealComplete", "Dell_Bases", baseName))
+config_path = dict(root="JPEG_Bases")
+# config_path = dict(root=os.path.join(hd_path, "DB_RealComplete", "Dell_Bases", baseName))
 
 # where RAW images should be
-# raw_folder_path_parent = os.path.join(real_path.parent.parent, "RAW_bases")
-raw_folder_path_parent = os.path.join(hd_path, "RAW_bases")
-config_path["raw_dir"] = ["ALASKA2_Base", "Boss_Base", "Dresden_Base", "RAISE_Base", "StegoApp_Base",
-                          "Wesaturate_Base"]
-# config_path["raw_dir"] = ["Boss_Base"]
+raw_folder_path_parent = os.path.join(real_path, "RAW_bases")
+config_path["raw_dir"] = ["Test_Base_1", "Test_Base_2"]
+# raw_folder_path_parent = os.path.join(hd_path, "RAW_bases")
+# config_path["raw_dir"] = ["ALASKA2_Base", "Boss_Base", "Dresden_Base", "RAISE_Base", "StegoApp_Base",
+#                           "Wesaturate_Base"]
 # where JPEG images will be stored:
 config_path["out_dir"] = config_path["root"] + "/" + baseName + "_JPG_1024x1024_QF75"
 # where JPEG images split with multi crop will be stored:
@@ -290,7 +290,8 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
                     raw_folder = os.path.split(RAWpath)[1]
                     if bool_multicrop and bool_random_dev is False:
                         # Split the TIFF in x TIFF of 256x256
-                        tif_multicrop_path = multi_crop(TIFimage3Path, config_process["jpg_per_raw"])
+                        tif_multicrop_path = multi_crop(TIFimage3Path, config_process["jpg_per_raw"],
+                                                        grayscale=bool_grayscale)
 
                         # Save JPEG in different folder (each RAW folder have 16 JPEG images)
                         jpeg_mutlicrop_path = os.path.join(config_path["out_dir_multisplit"], raw_folder)
@@ -345,15 +346,20 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
         print("[WARNING] Image: " + imageBaseName + ".jpg already processed: skipped ")
 
 
-def multi_crop(initial_path, nb_images):
+def multi_crop(initial_path, nb_images, grayscale=False):
     path = os.path.splitext(initial_path)[0]
     raw_image = str.split(path, '/')[-1]
     path = os.path.join(*str.split(path, '/')[1:-1])
-    complete_path = os.path.join("/", path, "Multi_Crop", raw_image)
+    # complete_path = os.path.join("/", path, "Multi_Crop", raw_image)
+    complete_path = os.path.join("./JPEG_Bases/Real_Base_3_MultiSplit_JPG_256x256_QF75", "Multi_Crop", raw_image)
     if not os.path.exists(complete_path):
         os.makedirs(complete_path, 0o755)
 
-    im = tifffile.imread(initial_path)
+    if grayscale:
+        im = tifffile.imread(initial_path)[:, :, 0]
+    else:
+        im = tifffile.imread(initial_path)
+
     img_width, img_height = im.shape[0:2]
 
     step = np.sqrt(nb_images)
@@ -369,7 +375,11 @@ def multi_crop(initial_path, nb_images):
             right = min(img_width, i + step_width)
             bottom = min(img_height, j + step_height)
 
-            imagette = im[left:right, top:bottom, :]
+            if grayscale:
+                imagette = im[left:right, top:bottom]
+            else:
+                imagette = im[left:right, top:bottom, :]
+
             try:
                 tifffile.imwrite(complete_path + "/" + raw_image + "_" + str(k + 1) + ".tif", imagette)
                 imgs.append(imagette)
@@ -384,7 +394,6 @@ def multi_crop(initial_path, nb_images):
 # **************************#
 #  BEGINNING OF THE SCRIPT  #
 # **************************#
-
 if __name__ == '__main__':
     # The beginning of the script, we get the time
     start_time = time.time()
