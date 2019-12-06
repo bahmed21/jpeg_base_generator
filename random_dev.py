@@ -2,27 +2,27 @@ import numpy as np
 import shutil
 from PIL import Image
 
-# Script used to randomly select the development paramters from RAW files to JPEG images.
-# This merely consists of a initialiser ( the function __init__ ) and a "development profile" random generator.
-# The initialiser is used to set all the development parameters; for simplicity we recall that those are the following:
+# Script used to randomly select the development parameters from RAW files to JPEG images.
+# This merely consists of a initializer ( the function __init__ ) and a "development profile" random generator.
+# The initializer is used to set all the development parameters; for simplicity we recall that those are the following:
 #   1) "dem_algorithm"  --> the demosaicing algorithm
 #   2) "resize"         --> a (sometimes used) resizing factor
 #   3) "denoise"         --> directional pyramid denoising settings
-#                       --> We use two parameters here "luminance" which corresponds to the denoising strenght and
+#                       --> We use two parameters here "luminance" which corresponds to the denoising strength and
 #                           "detail" which is defines, roughly speaking, the level of edge preserving
 #   4) sharpening (with Unsharpening mask) settings
 #                       --> We use two parameters there "radius" which corresponds to the size of the (convolution)
 #                           unsharpening mask and "amount" which correspond to the amount of unsharpening the denoising
-#                           strenght and "detail" which is defines, roughly speaking, the level of edge preserving
+#                           strength and "detail" which is defines, roughly speaking, the level of edge preserving
 #   5) Edge enhancement tools (micro-contrast) settings
 #                       --> We use two parameters there "radius" which corresponds to the size of the (convolution)
 #                           unsharpening mask and "amount" which correspond to the amount of unsharpening the denoising
-#                           strenght and "detail" which is defines, roughly
+#                           strength and "detail" which is defines, roughly
 # More details can be found at: https://rawpedia.rawtherapee.com
 #
 # Eventually, outside from rawtherapee software, we also specifies:
 #   6) JPEG compression quality factor
-#   7) final image size with of course two paramters.
+#   7) final image size with of course two parameters.
 
 KERNEL_dict = {Image.NEAREST: "NEAREST", Image.BILINEAR: "BILINEAR", Image.BICUBIC: "BICUBIC", Image.LANCZOS: "LANCZOS"}
 
@@ -97,7 +97,7 @@ class devRandomGenerator:
         detail = 0
         USM_before_DENOISE = 1
 
-        # This is the pp3 file in which developement parameters will be written for later used in rawtherapee.
+        # This is the pp3 file in which development parameters will be written for later used in rawtherapee.
         currentProfile = open(outputPath, 'w+')
         # Writing of the header of pp3 file.
         currentProfile.write("[Version]\nAppVersion=5.4\nVersion=331\n\n")
@@ -135,8 +135,8 @@ class devRandomGenerator:
 
         currentProfile.close()
 
-        # Optional: one can log all developement parameters for all images into a single file. If so we write into a
-        # slighty more verbose the developement parameters
+        # Optional: one can log all development parameters for all images into a single file. If so we write into a
+        # slightly more verbose the development parameters
         if backupfile is not None:
             BackupProfile = open(backupfile, 'a+')
             if radius == 0 and amount == 0:
