@@ -10,10 +10,11 @@ from PIL import Image
 #   3) "denoise"         --> directional pyramid denoising settings
 #                       --> We use two parameters here "luminance" which corresponds to the denoising strength and
 #                           "detail" which is defines, roughly speaking, the level of edge preserving
-#   4) sharpening (with Unsharpening mask) settings
+#   4) sharpening (with Unsharpening mask and RL deconvolution ) settings
 #                       --> We use two parameters there "radius" which corresponds to the size of the (convolution)
-#                           unsharpening mask and "amount" which correspond to the amount of unsharpening the denoising
-#                           strength and "detail" which is defines, roughly speaking, the level of edge preserving
+#                           unsharpening mask and "amount" which correspond to the amount of unsharpening, and we use
+#                           third parameter "iterations" which correspond to the number repetition  when we apply
+#                           RL Deconvolution (because RL Deconvolution is an iterative algorithm)
 #   5) Edge enhancement tools (micro-contrast) settings
 #                       --> We use two parameters there "radius" which corresponds to the size of the (convolution)
 #                           unsharpening mask and "amount" which correspond to the amount of unsharpening the denoising
@@ -40,6 +41,9 @@ class devFixGenerator:
 
         self.usm = {"radius": lambda: 0.5,
                     "amount": lambda: 250}
+        self.rld = {"radius": lambda: 0.5,
+                    "amount": lambda: 50,
+                    "iterations": lambda: 30, }
 
         self.denois = {"luminance": lambda: 0,
                        "detail": lambda: 50}
@@ -61,6 +65,7 @@ class devFixGenerator:
     def generate_fix_RT_profile(self, imageDevList, outputPath, backupfile, prob_usm_if_denoise):
         radius = 0
         amount = 0
+        iterations = 0
         luminance = 0
         detail = 0
         USM_before_DENOISE = 1
@@ -71,13 +76,22 @@ class devFixGenerator:
         currentProfile.write("[Version]\nAppVersion=5.4\nVersion=331\n\n")
         # Specifies if denoising is applied prior or after sharpening.
         if prob_usm_if_denoise < 0.5:
-            # There we start we unsharpening mask and pick randomly the associated parameters (radius and amount)
-            if imageDevList["choice"]["usm"] == 1:
-                radius = self.usm["radius"]()
-                amount = self.usm["amount"]()
-                currentProfile.write(
-                    "[Sharpening]\nEnabled=true\nMethod=usm\nRadius={}"
-                    "\nAmount={}\nThreshold=20;80;2000;1200;\n\n".format(radius, amount))
+            # There we start we sharpening  and pick randomly the associated parameters (radius and amount)
+            if imageDevList["choice"]["shr"] == 1:
+                # we choice the sharening method: Unsharpening mask or RL deconvolution
+                if imageDevList["choice"]["usm"] == 1:
+                    radius = self.usm["radius"]()
+                    amount = self.usm["amount"]()
+                    currentProfile.write(
+                        "[Sharpening]\nEnabled=true\nMethod=usm\nRadius={}"
+                        "\nAmount={}\nThreshold=20;80;2000;1200;\n\n".format(radius, amount))
+                else:
+                    radius = self.rld["radius"]()
+                    amount = self.rld["amount"]()
+                    iterations = self.rld["iterations"]()
+                    currentProfile.write(
+                        "[Sharpening]\nEnabled=true\nMethod=rld\nDeconvRadius={}"
+                        "\nDeconvAmount={}\nDeconvIterations={}\n\n".format(radius, amount, iterations))
 
                 # and, in needed, specifies the parameters for the denoising
                 if imageDevList["choice"]["denois_if_usm"] == 1:
@@ -94,23 +108,35 @@ class devFixGenerator:
                 detail = self.denois["detail"]()
                 currentProfile.write("[Directional Pyramid Denoising]\nEnabled=true\nEnhance=false\nMedian=false"
                                      "\nLuma={}\nLdetail={}\n\n".format(luminance, detail))
-                # ... and then unsharpening mask.
+                # ... and then sharpening .
                 if imageDevList["choice"]["usm_if_denois"] == 1:
-                    radius = self.usm["radius"]()
-                    amount = self.usm["amount"]()
-                    currentProfile.write("[Sharpening]\nEnabled=true\nMethod=usm\nRadius={}\nAmount={}"
-                                         "\nThreshold=20;80;2000;1200;\n".format(radius, amount))
-
+                    if imageDevList["choice"]["usm"] == 1:
+                        radius = self.usm["radius"]()
+                        amount = self.usm["amount"]()
+                        currentProfile.write(
+                            "[Sharpening]\nEnabled=true\nMethod=usm\nRadius={}"
+                            "\nAmount={}\nThreshold=20;80;2000;1200;\n\n".format(radius, amount))
+                    else:
+                        radius = self.rld["radius"]()
+                        amount = self.rld["amount"]()
+                        iterations = self.rld["iterations"]()
+                        currentProfile.write(
+                            "[Sharpening]\nEnabled=true\nMethod=rld\nDeconvRadius={}"
+                            "\nDeconvAmount={}\nDeconvIterations={}\n\n".format(radius, amount, iterations))
         currentProfile.close()
 
         # Optional: one can log all development parameters for all images into a single file. If so we write into a
         # slightly more verbose the development parameters
         if backupfile is not None:
             BackupProfile = open(backupfile, 'a+')
-            if radius == 0 and amount == 0:
-                USM_set = "OFF"
+            if radius == 0 and amount == 0 and iterations == 0:
+                SHR_set = "OFF"
+            elif iterations == 0:
+                SHR_set = "ON"
+                SHR_method = "USM"
             else:
-                USM_set = "ON"
+                SHR_set = "ON"
+                SHR_method = "RL decon"
 
             if luminance == 0 and detail == 0:
                 DENOISE_set = "OFF"
@@ -132,12 +158,12 @@ class devFixGenerator:
 
             # The line written into the log file
             BackupProfile.write(
-                "%30s | DEM %20s | %d | USM %3s , %5.2f , %6.2f | DENOISE %3s , %5.2f , %5.2f | "
+                "%30s | DEM %20s | %d | SHR %s, %3s , %5.2f , %6.2f | DENOISE %3s , %5.2f , %5.2f | "
                 "RESIZE %s , %s , %5.5f | %4d x %4d | %3d \n" % (
                     imageDevList["name"],
                     imageDevList["dem"],
                     USM_before_DENOISE,
-                    USM_set, radius, amount,
+                    SHR_set, SHR_method ,radius, amount,
                     DENOISE_set, luminance, detail,
                     RESIZE_set, RESIZE_kernel, RESIZE_factor,
                     imageDevList["crop_size"][0], imageDevList["crop_size"][1],

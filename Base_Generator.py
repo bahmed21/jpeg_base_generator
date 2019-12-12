@@ -75,11 +75,15 @@ config_process = dict()
 # otherwise, randomly select a subset of images
 config_process["number_of_output_images"] = 100000000
 config_process["jpg_per_raw"] = 16
+# Probability of using sharpening
+config_process["prob_shr"] = 1
 # Probability of using unsharpening mask
 config_process["prob_usm"] = 1
+# Probability of using RL deconvolution
+config_process["prob_rld"] = 1 - config_process["prob_usm"]
 # Probability of using directional pyramid denoising algorithm
 config_process["prob_denoise"] = 1
-# Probability of using unsharpening mask if denoising is used first
+# Probability of using sharpening  if denoising is used first
 config_process["prob_usm_if_denoise"] = 0
 # Probability of using denoising if unsharpening mask is used first
 config_process["prob_denoise_if_usm"] = 1
@@ -217,7 +221,9 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
             }
         else:
             DevList["choice"] = {
+                "shr": config_process["prob_usm"],
                 "usm": config_process["prob_usm"],
+                "rld": config_process["prob_usm"],
                 "denois": config_process["prob_denoise"],
                 "usm_if_denois": config_process["prob_usm_if_denoise"],
                 "denois_if_usm": config_process["prob_denoise_if_usm"]
@@ -262,6 +268,7 @@ def From_RAW_to_JPG(RAWimageName, RAWpath):
 
             # SECOND STEP: RESIZING and CROPPING
             # First of all, we carry out the resizing ; thi requires one extra parameter (the resizing factor) that
+            # depends on the image size ;
             # depends on the image size ;
             # To deal with this we call the resizing and get the factor as an output ....
             DevList["subsampling_factor"] = imProc.image_randomize_resizing(TIFimagePath, TIFimage2Path,
@@ -360,10 +367,10 @@ def multi_crop(initial_path, nb_images, grayscale=False):
     path = os.path.splitext(initial_path)[0]
     raw_image = str.split(path, '/')[-1]
     path = os.path.join(*str.split(path, '/')[1:-1])
-    # complete_path = os.path.join("/", path, "Multi_Crop", raw_image)
-    complete_path = os.path.join("./JPEG_Bases/Real_Base_3_MultiSplit_JPG_256x256_QF75", "Multi_Crop", raw_image)
-    if not os.path.exists(complete_path):
-        os.makedirs(complete_path, 0o755)
+    # entire_path = os.path.join("/", path, "Multi_Crop", raw_image)
+    entire_path = os.path.join("./JPEG_Bases/Real_Base_3_MultiSplit_JPG_256x256_QF75", "Multi_Crop", raw_image)
+    if not os.path.exists(entire_path):
+        os.makedirs(entire_path, 0o755)
 
     if grayscale:
         im = tifffile.imread(initial_path)[:, :, 0]
@@ -391,14 +398,14 @@ def multi_crop(initial_path, nb_images, grayscale=False):
                 imagette = im[left:right, top:bottom, :]
 
             try:
-                tifffile.imwrite(complete_path + "/" + raw_image + "_" + str(k + 1) + ".tif", imagette)
+                tifffile.imwrite(entire_path + "/" + raw_image + "_" + str(k + 1) + ".tif", imagette)
                 imgs.append(imagette)
             except:
                 print("Error somewhere when the image is being save...")
                 pass
             k += 1
 
-    return complete_path
+    return entire_path
 
 
 # **************************#
